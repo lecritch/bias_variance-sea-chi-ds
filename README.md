@@ -11,8 +11,6 @@
 
 
 
-[Bias_variance_tradeoff_deck](https://docs.google.com/presentation/d/1Rg-HiuxSQhegK6TFFwmdfhLDjGU8JLd0PxOhGk0zYNU/edit#slide=id.g5ca96dca77_1_0)
-
 # 1. Explain what bias, variance, and error are in the context of statistical modeling
 
 ![which model is better](img/which_model_is_better.png)
@@ -101,6 +99,8 @@ On the other hand, **high variance** algorithms tend to be more complex, with fl
 + They train models that are accurate on average, but inconsistent.
 + These include non-linear or non-parametric algorithms such as decision trees and nearest neighbors.
 
+### Let's take a look at our familiar King County housing data. 
+
 $\Large Total Error = Model\ Bias^2 + Model\ Variance + Irreducible\ Error$
 
 
@@ -109,35 +109,29 @@ http://scott.fortmann-roe.com/docs/BiasVariance.html
 
 ![which_model](img/which_model_is_better_2.png)
 
-# 1. Explain what bias, variance, and error are in the context of statistical modeling
-
-There are 3 types of prediction error: bias, variance, and irreducible error.
-
-
-**Total Error = Bias + Variance + Irreducible Error**
-
-### The Bias-Variance Tradeoff
-
-
-**Let's do a thought experiment:**
-
-1. Imagine you've collected 5 different training sets for the same problem.
-2. Now imagine using one algorithm to train 5 models, one for each of your training sets.
-3. Bias vs. variance refers to the accuracy vs. consistency of the models trained by your algorithm.
-
-<img src='img/Bias-vs.-Variance-v5-2-darts.png' width=500 />
-
-**High bias** algorithms tend to be less complex, with simple or rigid underlying structure.
-
-+ They train models that are consistent, but inaccurate on average.
-+ These include linear or parametric algorithms such as regression and naive Bayes.
-
-On the other hand, **high variance** algorithms tend to be more complex, with flexible underlying structure.
-
-+ They train models that are accurate on average, but inconsistent.
-+ These include non-linear or non-parametric algorithms such as decision trees and nearest neighbors.
-
 # Train Test Split
+
+It is hard to know if your model is too simple or complex by just using it on training data.
+
+We can hold out part of our training sample, and use it as a test sample and use it to monitor our prediction error.
+
+This allows us to evaluate whether our model has the right balance of bias/variance. 
+
+<img src='img/testtrainsplit.png' width =550 />
+
+* **training set** —a subset to train a model.
+* **test set**—a subset to test the trained model.
+
+
+### Should you ever train on your test set?  
+
+
+![no](https://media.giphy.com/media/d10dMmzqCYqQ0/giphy.gif)
+
+
+**Never train on test data.** If you are seeing surprisingly good results on your evaluation metrics, it might be a sign that you are accidentally training on the test set. 
+
+##### [Link](https://datascience.stackexchange.com/questions/38395/standardscaler-before-and-after-splitting-data) about data leakage and scalars
 
 **How do we know if our model is overfitting or underfitting?**
 
@@ -150,15 +144,62 @@ We then measure our performance on the unseen data.
 
 If the model performs way worse on the  unseen data, it is probably  overfitting the data.
 
-The previous module introduced the idea of dividing your data set into two subsets:
-
-* **training set** —a subset to train a model.
-* **test set**—a subset to test the trained model.
-
-You could imagine slicing the single data set as follows:
-
-<img src='img/testtrainsplit.png' width =550 />
-
-**Never train on test data.** If you are seeing surprisingly good results on your evaluation metrics, it might be a sign that you are accidentally training on the test set. 
-
 <img src='https://developers.google.com/machine-learning/crash-course/images/WorkflowWithTestSet.svg' width=500/>
+
+Let's go back to our KC housing data without the polynomial transformation.
+
+Now, we create a train-test split via the sklearn model selection package.
+
+A .65 R-squared reflects a model that explains a fairly high amount of the total variance in the data. 
+
+### Knowledge check
+How would you describe the bias of the model based on the above training R^2?
+
+
+```python
+"A model with a .65 R^2 is approaching a low bias model."
+```
+
+
+
+
+    'A model with a .65 R^2 is approaching a low bias model.'
+
+
+
+Next, we test how well the model performs on the unseen test data. Remember, we do not fit the model again. The model has calculated the optimal parameters learning from the training set.  
+
+
+The difference between the train and test scores are low.
+
+What does that indicate about variance?
+
+
+```python
+'The model has low variance'
+```
+
+
+
+
+    'The model has low variance'
+
+
+
+# Now, let's try the same thing with our complex, polynomial model.
+
+# Kfolds 
+
+![kfolds](img/k_folds.png)
+
+[image via sklearn](https://scikit-learn.org/stable/modules/cross_validation.html)
+
+In this process, we split the dataset into train and test as usual, then we perform a shuffling train test split on the train set.  
+
+KFolds holds out one fraction of the dataset, trains on the larger fraction, then calculates a test score on the held out set.  It repeats this process until each group has served as the test set.
+
+We tune our parameters on the training set using kfolds, then validate on the test data.  This allows us to build our model and check to see if it is overfit without touching the test data set.  This protects our model from bias.
+
+Once we have an acceptable model, we train our model on the entire training set, and score on the test to validate.
+
+
