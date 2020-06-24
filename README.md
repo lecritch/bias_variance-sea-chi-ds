@@ -375,6 +375,8 @@ np.random.seed(42)
 # Let's generate random subsets of our data
 
 #Date  is not in the correct format so we are dropping it for now.
+sample_point = df.drop('price', axis=1).sample(1)
+point_preds = []
 
 r_2 = []
 simple_rmse = []
@@ -392,6 +394,9 @@ for i in range(100):
     simple_rmse.append(np.sqrt(mean_squared_error(y, y_hat)))
     r_2.append(lr.score(X,y))
     
+    y_hat_point = lr.predict(sample_point)
+    
+    point_preds.append(y_hat_point)
     
 
 ```
@@ -399,11 +404,11 @@ for i in range(100):
 
 ```python
 print(f'simple mean {np.mean(simple_rmse)}')
-print(f'simple variance {np.var(simple_rmse)}')
+print(f'simple variance {np.var(point_preds)}')
 ```
 
-    simple mean 228303.4528251759
-    simple variance 73238189.28935923
+    simple mean 228460.56183597515
+    simple variance 77297954.16271643
 
 
 
@@ -747,7 +752,12 @@ df_poly.head(10)
 
 ```python
 np.random.seed(42)
+
+sample_point = df_poly.drop('price', axis=1).sample(1)
+
+
 r_2 = []
+point_preds_comp = []
 complex_rmse = []
 for i in range(100):
     
@@ -761,6 +771,10 @@ for i in range(100):
     complex_rmse.append(np.sqrt(mean_squared_error(y, y_hat)))
     r_2.append(lr.score(X,y))
     
+    y_hat_point = lr.predict(sample_point)
+    
+    point_preds_comp.append(y_hat_point)
+    
 ```
 
 
@@ -768,14 +782,14 @@ for i in range(100):
 print(f'simpl mean {np.mean(simple_rmse)}')
 print(f'compl mean {np.mean(complex_rmse)}')
 
-print(f'simp variance {np.var(simple_rmse)}')
-print(f'comp variance {np.var(complex_rmse)}')
+print(f'simp variance {np.var(point_preds)}')
+print(f'comp variance {np.var(point_preds_comp)}')
 ```
 
-    simpl mean 228303.4528251759
-    compl mean 195246.84153558695
-    simp variance 73238189.28935923
-    comp variance 1092553181.415185
+    simpl mean 228460.56183597515
+    compl mean 193508.74007561
+    simp variance 77297954.16271643
+    comp variance 1311682449.9857328
 
 
 ![which_model](img/which_model_is_better_2.png)
