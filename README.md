@@ -4,15 +4,16 @@
 
 ## Agenda
 
-1. Explain what bias, variance, and error are in the context of statistical modeling
+1. Revisit the goal of model building, and relate it to expected value, bias and variance
 2. Defining Error: prediction error and irreducible error
 3. Define prediction error as a combination of bias and variance
 4. Explore the bias-variance tradeoff
-5. Train-test split
+5. Code a basic train-test split
+6. Code K-Folds
 
 
 
-# 1. Explain what bias, variance, and error are in the context of statistical modeling
+# 1. Revisit the goal of model building, and relate it to expected value, bias and variance
 
 ![which model is better](img/which_model_is_better.png)
 
@@ -29,18 +30,15 @@ https://towardsdatascience.com/cultural-overfitting-and-underfitting-or-why-the-
 
 # What is a “Model”?
 
- - A “model” is a general specification of relationships among variables. E.G. Linear Regression:
-
-$$\Large Price = \beta_1 X_1 + \beta_0 + \epsilon$$
-
- - Each model makes assumptions about how the variables interact. 
- - A 'trained model' operates on these assumptions to learn from how best to interact with training data.
- - In linear regression, the learning results in a set of parameters that define the best fit linear equation.
- - The higher the quality of learning form this training data, the more precicely the model will reflect the real world process the data was generated from.
- - The model will then perform more accurately on unseen samples.
+ - A “model” is a general specification of relationships among variables. 
+     - E.G. Linear Regression: or $ Price = \beta_1*Time +  \beta_0 + \epsilon$
 
 
-# Remember Expected Value?
+ 
+
+ - A “trained model” is a particular model with parameters estimated using some training data.
+
+# Remember Expected Value? How is it connected to bias and variance?
 - The expected value of a quantity is the weighted average of that quantity across all possible samples
 
 ![6 sided die](https://media.giphy.com/media/sRJdpUSr7W0AiQ3RcM/giphy.gif)
@@ -49,23 +47,14 @@ $$\Large Price = \beta_1 X_1 + \beta_0 + \epsilon$$
 
 ### The expected value of a 6-sided die is:
 
+- Now lets imagine we create a model that always predicts a roll of 3.
 
-```python
-
-probs = 1/6
-rolls = range(1,7)
-
-expected_value = sum([probs * roll for roll in rolls])
-expected_value
-
-```
-
-Suppose we created a model which always predicted that the die roll would be 3.
-
-The **bias** of our model would be the difference between the our expected prediction (3) and the expected value (3.5).
-
-What would the **variance** of our model be?
-
+    - The bias is the difference between the average prediction of our model and the average roll of the die as we roll more and more times.
+        - What is the bias of a model that alway predicts 3? 
+   
+   
+    - The variance is the average difference between each individual prediction and the average prediction of our model as we roll more and more times.
+        - What is the variance of that model?
 
 # 2. Defining Error: prediction error and irreducible error
 
@@ -73,16 +62,60 @@ What would the **variance** of our model be?
 
 ### Regression fit statistics are often called “error”
  - Sum of Squared Errors (SSE)
+ $ {\displaystyle \operatorname {SSE} =\sum _{i=1}^{n}(Y_{i}-{\hat {Y_{i}}})^{2}.} $
  - Mean Squared Error (MSE) 
  
- Both are calculated using residuals
+ $ {\displaystyle \operatorname {MSE} ={\frac {1}{n}}\sum _{i=1}^{n}(Y_{i}-{\hat {Y_{i}}})^{2}.} $
+ 
+ - Root Mean Squared Error (RMSE)  
+ $ {\displaystyle \operatorname 
+  {RMSE} =\sqrt{MSE}} $
+
+ All are calculated using residuals    
 
 ![residuals](img/residuals.png)
 
 
-This error can be broken up into parts:
+# Individual Code: Turn Off Screen
 
-$Total Error = Residual = Prediction\ Error+ Irreducible\ Error$
+ - Fit a quick and dirty linear regression model
+ - Store predictions in the y_hat variable using predict() from the fit model
+ - handcode SSE
+ - Divide by the length of array to find Mean Squared Error
+ - Make sure MSE equals sklearn's mean_squared_error function
+ 
+
+
+```python
+
+import pandas as pd
+import numpy as np
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_squared_error
+np.random.seed(42)
+df = pd.read_csv('data/king_county.csv', index_col='id')
+df = df.iloc[:,:12]
+X = df.drop('price', axis=1)
+y = df.price
+lr = LinearRegression()
+lr.fit(X,y)
+
+y_hat = lr.predict(X)
+
+sse = sum((y_hat - y)**2)
+mse = sse/len(y_hat)
+rmse = np.sqrt(mse)
+print(mean_squared_error(y, y_hat))
+print(mse)
+print(rmse)
+```
+
+    53170511676.69001
+    53170511676.68982
+    230587.3189849993
+
+
+## This error can be broken up into parts:
 
 ![defining error](img/defining_error.png)
 
@@ -92,24 +125,23 @@ The goal of modeling is to reduce the prediction error, which is the difference 
 
 # 3. Define prediction error as a combination of bias and variance
 
+$\Large Total\ Error\ = Prediction\ Error+ Irreducible\ Error$
+
 Our prediction error can be further broken down into error due to bias and error due to variance.
 
-$\Large Prediction\ Error = Model\ Bias^2 + Model\ Variance $
-
-So our total error can be thought of as a combination of bias, variance, and irriducile error.
-
-$\Large Total Error = Model\ Bias^2 + Model\ Variance + Irreducible\ Error$
+$\Large Total\ Error = Model\ Bias^2 + Model\ Variance + Irreducible\ Error$
 
 
-**Model Bias** is the expected prediction error from your expected trained model
 
-> In other words, if you were to train multiple models on different samples, what would be the average prediction error.
+**Model Bias** is the expected prediction error of the expected trained model
+
+> In other words, if you were to train multiple models on different samples, what would be the average difference between the prediction and the real value.
 
 **Model Variance** is the expected variation in predictions, relative to your expected trained model
 
-> In other words, it is a measure of how much your model varies for any given point.
+> In other words, what would be the average difference between any one model's prediction and the average of all the predictions .
 
-**Let's do a thought experiment:**
+
 
 # Thought Experiment
 
@@ -129,11 +161,22 @@ http://scott.fortmann-roe.com/docs/BiasVariance.html
 
 + They train models that are consistent, but inaccurate on average.
 + These include linear or parametric algorithms such as regression and naive Bayes.
++ For linear, perhaps some assumptions about our feature set could lead to high bias. 
+      - We did not include the correct predictors
+      - We did not take interactions into account
+      - In linear, we missed a non-linear relationship (polynomial). 
+      
+High bias models are **underfit**
 
 On the other hand, **high variance** algorithms tend to be more complex, with flexible underlying structure.
 
 + They train models that are accurate on average, but inconsistent.
 + These include non-linear or non-parametric algorithms such as decision trees and nearest neighbors.
++ For linear, perhaps we included an unreasonably large amount of predictors. 
+      - We created new features by squaring and cubing each feature
++ High variance models are modeling the noise in our data
+
+High variance models are **overfit**
 
 
 
@@ -175,13 +218,60 @@ If the model performs way worse on the  unseen data, it is probably  overfitting
 
 <img src='https://developers.google.com/machine-learning/crash-course/images/WorkflowWithTestSet.svg' width=500/>
 
-### Should you ever train on your test set?  
+# Word Play in groups
+
+Fill in the variable to correctly finish the sentences.
+
+
+
+```python
+
+b_or_v = 'add a letter'
+over_under = 'add a number'
+
+a = " The model has low bias and high variance."
+b = " The model has high bias and low variance."
+c = " The model has both low bias and variance"
+d = " The model has high bias and high variance"
+
+over = "In otherwords, it is overfit."
+under = "In otherwords, it is underfit."
+other = 'That is an abberation'
+good = "In otherwords, we have a solid model"
+
+
+one = "The model has a low RMSE on training and a low RMSE on test." + b + " " + under
+two = "The model has a high R^2 on both the training set, but low on the test." +  a + " " + over
+three = "The model performs well on data it is fit on and well on data it has not seen." + c + " " + good
+four = "The model has a low R^2 on training but high on the test set."  + d + " " + other
+seven = "The model has high R^2 on the training set and low R^2 on the test."  + b + " " + under
+four = "The model leaves out many of the meaningful predictors, but is consistent across samples." + b + " " + under
+six = "The model is highly sensitive to random noise in the training set."  + a + " " + over
+print(one)
+print(two)
+print(three)
+print(four)
+print(five)
+print(six)
+
+
+```
+
+    The model has a low RMSE on training and a low RMSE on test. The model has high bias and low variance. In otherwords, it is underfit.
+    The model has a high R^2 on both the training set, but low on the test. The model has low bias and high variance. In otherwords, it is overfit.
+    The model performs well on data it is fit on and well on data it has not seen. The model has both low bias and variance In otherwords, we have a solid model
+    The model leaves out many of the meaningful predictors, but is consistent across samples. The model has high bias and low variance. In otherwords, it is underfit.
+    The model is highly sensitive to random noise in the training setadd a letter add a number
+    The model is highly sensitive to random noise in the training set. The model has low bias and high variance. In otherwords, it is overfit.
+
+
+### Should you ever fit on your test set?  
 
 
 ![no](https://media.giphy.com/media/d10dMmzqCYqQ0/giphy.gif)
 
 
-**Never train on test data.** If you are seeing surprisingly good results on your evaluation metrics, it might be a sign that you are accidentally training on the test set. 
+**Never fit on test data.** If you are seeing surprisingly good results on your evaluation metrics, it might be a sign that you are accidentally training on the test set. 
 
 
 
@@ -196,7 +286,7 @@ How would you describe the bias of the model based on the above training R^2?
 
 
 ```python
-"A model with a .513 R^2 has a relatively high bias."
+"A model with a .513 R^2 has a fairly high bias."
 ```
 
 
@@ -271,6 +361,25 @@ KFolds holds out one fraction of the dataset, trains on the larger fraction, the
 We tune our parameters on the training set using kfolds, then validate on the test data.  This allows us to build our model and check to see if it is overfit without touching the test data set.  This protects our model from bias.
 
 # Fill in the Blank
+
+
+```python
+
+from sklearn.model_selection import KFold
+
+kf = KFold(n_splits=5)
+
+train_r2 = []
+test_r2 = []
+for train_ind, test_ind in kf.split(X,y):
+    
+    X_train, y_train = X.iloc[train_ind], y.iloc[train_ind]
+    X_test, y_test = X.iloc[test_ind], y.iloc[test_ind]
+    
+    lr.fit(X_train, y_train)
+    train_r2.append(lr.score(X_train, y_train))
+    test_r2.append(lr.score(X_test, y_test))
+```
 
 Once we have an acceptable model, we train our model on the entire training set, and score on the test to validate.
 
